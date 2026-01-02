@@ -7,11 +7,16 @@ import { verifyPassword } from './lib/crypto';
 import Credentials from 'next-auth/providers/credentials';
 import NextAuth, { User } from 'next-auth';
 import { Session } from 'next-auth';
+import createVerificationLink from './lib/verification';
+import { sendVerificationMail } from './lib/mail';
+import { JWT } from 'next-auth/jwt';
+import { CustomError } from './lib/errors';
 
 export const authConfig = {
   trustHost: true,
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: 'jwt', maxAge: 60 * 60 * 24 * 7 }, // 7 days
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   adapter: PrismaAdapter(prisma) as any,
   providers: [
     Nodemailer({
@@ -37,22 +42,43 @@ export const authConfig = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       async authorize(credentials: any) {
         const creds = credentials as
           | { email: string; password: string }
           | undefined;
-        if (!creds?.email || !creds?.password) return null;
+        if (!creds?.email || !creds?.password)
+          throw new CustomError(
+            'Invalid Credentials',
+            'Invalid email or password. Please try again.'
+          );
 
         const user = await prisma.user.findUnique({
           where: { email: creds.email },
         });
-        if (!user || !user.passwordHash) return null;
+        if (!user || !user.passwordHash)
+          throw new CustomError(
+            'User Does Not Exist',
+            'Invalid email or password. Please try again.'
+          );
 
         const ok = await verifyPassword(creds.password, user.passwordHash);
-        if (!ok) return null;
+        if (!ok)
+          throw new CustomError(
+            'Invalid Credentials',
+            'Invalid email or password. Please try again.'
+          );
 
-        if (!user.emailVerified)
-          throw new Error('Email not verified. Please check your inbox.');
+        if (user && !user.emailVerified) {
+          const link = await createVerificationLink(user.email!, 30);
+
+          await sendVerificationMail(user.email!, link);
+
+          throw new CustomError(
+            'Email Not Verified',
+            `Please click the verification link sent to ${user.email}.`
+          );
+        }
 
         return {
           id: user.id,
@@ -70,15 +96,15 @@ export const authConfig = {
     newUser: '/auth/welcome',
   },
   callbacks: {
-    async jwt({ token, user }: { token: any; user?: User }) {
+    async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
+        token.role = (user as User).role;
         token.image = user.image;
       }
       return token;
     },
-    async session({ session, token }: { session: Session; token: any }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (token) {
         session.user.id = token.id;
         session.user.role = token.role;
