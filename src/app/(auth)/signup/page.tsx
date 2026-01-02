@@ -75,8 +75,6 @@ export default function SignUpPage() {
 
   const score = useMemo(() => scorePassword(pw), [pw]);
 
-  console.log(pw, scorePassword(pw));
-
   const getStrenthInfo = (score: number) => {
     if (score === -1) return { label: '', color: '', percent: 0 };
 
