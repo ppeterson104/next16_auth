@@ -36,7 +36,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Header></Header>
+          <Header />
           <main>
             {children}
             <Toaster position="top-right" richColors />
