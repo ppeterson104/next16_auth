@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { hashPassword } from '@/lib/crypto';
-import crypto from 'crypto';
 import { sendVerificationMail } from '@/lib/mail';
+import createVerificationLink from '@/lib/verification';
 
 export async function POST(req: Request) {
   const { name, email, password } = await req.json().catch(() => ({}));
@@ -37,21 +37,7 @@ export async function POST(req: Request) {
     },
   });
 
-  const token = crypto.randomBytes(32).toString('hex');
-  const expires = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
-
-  await prisma.verificationToken.create({
-    data: {
-      token,
-      expires,
-      identifier: user.email!,
-    },
-  });
-
-  const base = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  const link = `${base}/verify-email?token=${encodeURIComponent(
-    token
-  )}&email=${encodeURIComponent(user.email!)}`;
+  const link = await createVerificationLink(user.email!, 30);
 
   //console.log(user, link);
 
