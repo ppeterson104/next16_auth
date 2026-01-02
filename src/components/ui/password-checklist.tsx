@@ -1,5 +1,6 @@
 'use client';
-import React from 'react';
+import { cn } from '@/lib/utils';
+import { Check, CircleIcon } from 'lucide-react';
 
 interface PasswordChecklistProps {
   pwLength: number;
@@ -21,41 +22,55 @@ export default function PasswordChecklist({
   return (
     <div className="space-y-1 text-xs text-muted-foreground">
       <div
-        className={
+        className={cn(
           pwLength && pwLength >= minLength
             ? 'text-green-600 dark:text-green-400'
-            : 'text-muted-foreground'
-        }
+            : 'text-muted-foreground',
+          'flex items-center gap-2'
+        )}
       >
-        {pwLength && pwLength >= minLength ? '✓' : 'o'} At least {minLength}{' '}
-        characters
+        {pwLength && pwLength >= minLength ? (
+          <Check size={12} />
+        ) : (
+          <CircleIcon size={8} />
+        )}{' '}
+        At least {minLength} characters
       </div>
       <div
-        className={
+        className={cn(
           hasUpperCase && hasLowerCase
             ? 'text-green-600 dark:text-green-400'
-            : 'text-muted-foreground'
-        }
+            : 'text-muted-foreground',
+          'flex items-center gap-2'
+        )}
       >
-        {hasUpperCase && hasLowerCase ? '✓' : 'o'} Upper & lowercase letters
+        {hasUpperCase && hasLowerCase ? (
+          <Check size={12} />
+        ) : (
+          <CircleIcon size={8} />
+        )}{' '}
+        Upper & lowercase letters
       </div>
       <div
-        className={
+        className={cn(
           hasNumbers
             ? 'text-green-600 dark:text-green-400'
-            : 'text-muted-foreground'
-        }
+            : 'text-muted-foreground',
+          'flex items-center gap-2'
+        )}
       >
-        {hasNumbers ? '✓' : 'o'} Number
+        {hasNumbers ? <Check size={12} /> : <CircleIcon size={8} />} Number
       </div>
       <div
-        className={
+        className={cn(
           hasSpecialChars
             ? 'text-green-600 dark:text-green-400'
-            : 'text-muted-foreground'
-        }
+            : 'text-muted-foreground',
+          'flex items-center gap-2'
+        )}
       >
-        {hasSpecialChars ? '✓' : 'o'} Special character
+        {hasSpecialChars ? <Check size={12} /> : <CircleIcon size={8} />}{' '}
+        Special character
       </div>
     </div>
   );
