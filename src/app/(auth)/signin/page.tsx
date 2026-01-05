@@ -140,8 +140,21 @@ export default function SignInPage() {
               Don&apos;t have an account?{' '}
               <span className="text-">
                 {' '}
-                <Link href="signup">Sign up</Link>{' '}
+                <Link
+                  href="/signup"
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  Sign up
+                </Link>{' '}
               </span>
+            </p>
+            <p>
+              <Link
+                href="/forgot-password"
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                Forgot your password?
+              </Link>
             </p>
           </div>
         </CardContent>
