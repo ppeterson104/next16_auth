@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!user)
     return NextResponse.json(
       { message: 'There was a problem retrieving this account.' },
-      { status: 200 }
+      { status: 201 }
     );
 
   const link = await createResetLink(user.id, 30);
