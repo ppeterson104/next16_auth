@@ -1,4 +1,3 @@
-import React from 'react';
 import { auth, signOut } from '@/auth';
 import Link from 'next/link';
 import ThemeToggle from './theme-toggle';
