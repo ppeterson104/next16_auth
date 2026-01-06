@@ -7,10 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { hashPassword } from '@/lib/crypto';
 import { prisma } from '@/lib/db';
 import generateTokenHash from '@/lib/hash';
 import { AlertCircleIcon } from 'lucide-react';
 import { redirect } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default async function ResetPasswordPage({
   searchParams,
@@ -33,6 +35,36 @@ export default async function ResetPasswordPage({
 
   async function reset(data: FormData) {
     'use server';
+    const newPassword = String(data.get("password"));
+    if (!token || newPassword.length < 8) {
+      return;
+    }
+
+    const tokenHash = generateTokenHash(token);
+    const tokenRecord = await prisma.passwordResetToken.findUnique({ where: {tokenHash}
+    });
+
+    const invalid = !tokenRecord;
+  const expired = tokenRecord ? tokenRecord.expiresAt < new Date() : false;
+  const used = tokenRecord?.usedAt;
+
+  if (invalid || expired || used) {
+    toast.error("Unable to reset password. Try again.");
+    return;
+  }
+try {
+  await prisma.user.update({where: {id: tokenRecord?.userId}, data: {passwordHash: await hashPassword(newPassword)}});
+
+  toast.success("Password updated successfully!");
+} catch (error) {
+  toast.error("Failed to update password.")
+}
+  await prisma.passwordResetToken.update({where: {tokenHash}, data: { usedAt: new Date()},})
+/*
+Use for db auth instead of jwt
+  await prisma.session.deleteMany({ where: {userId: tokenRecord.userId}});
+  */
+  redirect('/signin');
   }
 
   if (invalid || expired || used) {
