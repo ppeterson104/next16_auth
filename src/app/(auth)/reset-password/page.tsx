@@ -21,6 +21,8 @@ export default async function ResetPasswordPage({
 }) {
   const { token } = await searchParams;
 
+  toast.error('Bad link data.');
+
   if (!token) redirect('/');
 
   const tokenHash = generateTokenHash(token);
