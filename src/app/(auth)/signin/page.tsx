@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -30,10 +30,15 @@ import {
 
 import { Input } from '@/components/ui/input';
 import { signIn } from 'next-auth/react';
+import { CustomError } from '@/lib/errors';
 
 const schema = z.object({
   email: z.email('Enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters.'),
+});
+
+const emailSchema = z.object({
+  email: z.email('Enter a valid email address'),
 });
 
 export default function SignInPage() {
@@ -45,9 +50,27 @@ export default function SignInPage() {
     },
   });
 
+  const emailForm = useForm<z.infer<typeof emailSchema>>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { email: "",},
+  });
+
   const [pending, startTransition] = useTransition();
+  const [showEmailLink, setShowEmailLink] = useState(false);
 
   const router = useRouter();
+
+  const signInGoogle = () => {
+    startTransition(async ()=> {
+      try {
+await signIn("google", {callbackUrl: "/dashboard"});
+      } catch (error) {
+        console.error("Google sign in failed:", error);
+       // throw new CustomError("Sign in failure", "Google sign-in failed.");
+        toast.error("Google sign in failed. Please try again.");
+      }
+    })
+  }
 
   const signInCredentials = (values: z.infer<typeof schema>) => {
     startTransition(async () => {
@@ -77,20 +100,41 @@ export default function SignInPage() {
     });
   };
 
+  const signInEmailLink = (values: z.infer<typeof emailSchema>) => {
+    startTransition(async () => {
+try {
+      const res = await signIn("nodemailer", { email: values.email, redirect: false, callbackUrl: "/dashboard"});
+
+      if (res?.ok) {
+        toast.success("Magic link sent! Check your inbox for the sign-in link.");
+      }
+    } catch (error) {
+      console.error("Magic link error:", error);
+      toast.error("Something went wrong while sending the link.");
+
+    }
+    })
+    
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-background p-6">
       <Card className="w-full max-w-md p-8">
         <CardHeader className="text-2xl font-bold mb-6 text-center">
-          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <CardTitle className="text-2xl">{showEmailLink ? "Email me a sign-in link" : "Sign In"}</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Enter your login details to access your account
+            {showEmailLink ? "Enter your email and we'll send you a sign-in link" : "Enter your login details to access your account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
+
+          {!showEmailLink ? (
+            <>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(signInCredentials)}
               className="space-y-4"
+              key="sign-in form"
             >
               <FormField
                 control={form.control}
@@ -134,8 +178,8 @@ export default function SignInPage() {
                 {pending ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
-          </Form>
-          {/*divider*/}
+            {/*divider*/}
+           
           <div className="relative mt-4">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-border" />
@@ -146,9 +190,10 @@ export default function SignInPage() {
                   </span>
                 </div>
               </div>
+              
             {/* OAuth + Magic Link Options */}
           <div className='grid gap-3'>
-            <Button variant={"outline"} disabled={pending} className='w-full mt-4 relative overflow-hidden border-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-600'>
+            <Button variant={"outline"} disabled={pending} onClick={signInGoogle} className='w-full mt-4 relative overflow-hidden border-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-600'>
               <div className="absolute flex items-center justify-center gap-3">
                 <div className="w-full h-full bg-linear-to-r from-blue-500 via-red-500 to-yellow-500"></div>
               </div>
@@ -177,7 +222,36 @@ export default function SignInPage() {
                     </span>
                   </div>
             </Button>
+           <Button variant={"secondary"} onClick={() => setShowEmailLink(true)} disabled={pending} className="w-full">Sign in with email link</Button>
           </div>
+          </Form>
+          </>
+          ) : (<><Form {...emailForm}>
+            <form onSubmit={emailForm.handleSubmit(signInEmailLink)} key="sign-in-email-form" className="space-y-4">
+              <FormField control={emailForm.control}
+              name="email"
+              render={({field}) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                <Input type="email" placeholder="you@example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+
+          )}
+          />
+          <div className="grid gap-2">
+            <Button type="submit" disabled={pending} className="w-full">{pending ? "Sending link..." : "Send sign-in link" }</Button>
+            <Button type="button" variant="outline" onClick={() => setShowEmailLink(false)}>Back to sign in</Button>
+          </div>
+
+            </form>
+                       </Form>
+                       <div className="text-center text-sm text-muted-foreground mt-2"><p>We'll email you a link that signs you in instantly</p></div>
+                      </>
+                      )}
+          
           <div className="mt-6 text-center text-sm">
             <p className="text-muted-foreground">
               Don&apos;t have an account?{' '}
