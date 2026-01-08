@@ -40,7 +40,7 @@ export default async function Header() {
             >
               Dashboard
             </Link>
-            {role === 'admin' && (
+            {role?.toLowerCase() === 'admin' && (
               <Link
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-900"
                 href="/admin"
