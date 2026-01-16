@@ -40,7 +40,7 @@ export default async function Header() {
             >
               Dashboard
             </Link>
-            {role?.toLowerCase() === 'admin' && (
+            {role === 'admin' && (
               <Link
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-900"
                 href="/admin"
@@ -76,9 +76,12 @@ export default async function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
+                    <Link href="/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href="/dashboard">Dashboard</Link>
                   </DropdownMenuItem>
-                  {role === 'ADMIN' && (
+                  {role === 'admin' && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin">Admin Panel</Link>
                     </DropdownMenuItem>
