@@ -85,7 +85,7 @@ export const authConfig = {
           email: user.email,
           name: user.name,
           image: user.image,
-          role: user.role,
+          role: user.role.toLowerCase(),
         };
       },
     }),
@@ -99,7 +99,7 @@ export const authConfig = {
     async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as User).role;
+        token.role = (user as User).role.toLowerCase();
         token.image = user.image;
       }
       return token;
@@ -107,7 +107,7 @@ export const authConfig = {
     async session({ session, token }: { session: Session; token: JWT }) {
       if (token) {
         session.user.id = token.id;
-        session.user.role = token.role;
+        session.user.role = token.role.toLowerCase();
         session.user.image = token.image;
       }
       return session;
